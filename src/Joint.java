@@ -1,4 +1,3 @@
-
 public class Joint {
     private double minAngle;
     private double maxAngle;
@@ -112,5 +111,3 @@ public class Joint {
     }
 
 }
-
-
