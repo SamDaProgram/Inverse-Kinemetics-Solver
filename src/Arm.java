@@ -122,7 +122,7 @@ public class Arm {
         }
 
         this.baseAngle = optimalAngle;
-        System.out.println("Optimal Angle: " + optimalAngle + ", Minimal Distance: " + minimalDistance);
+        System.out.println("Rotating Base Optimal Angle: " + optimalAngle + ", Minimal Distance: " + minimalDistance);
     }
 
     private double calculateEuclideanDistance(double roll1, double pitch1, double yaw1, double roll2, double pitch2, double yaw2) {
@@ -145,15 +145,16 @@ public class Arm {
             currentAngle += arm[i].getRelativeAngle();  // Update current angle
             round.calculateDistance(currentAngle);  // Calculate position
             roll += round.getX();
-            pitch += round.getY();
-            yaw += round.getZ();
+            yaw += round.getY();
+            pitch += round.getZ();
+            //#TODO fix yaw and adjust identifier
         }
-
         // Add base rotation plate contribution
         CircleOffset round = new CircleOffset(roll);
         round.calculateDistance(baseAngle);
         pitch += round.getY();
-
+        roll += round.getX();
+       // System.out.println("Yaw: " + yaw + ", Pitch: " + pitch + ", Roll: " + roll);
         return new double[]{roll, pitch, yaw};  // Return calculated position
     }
     private double getDistance() {
@@ -161,13 +162,19 @@ public class Arm {
     }
 
     private double getRadius() {
-        double[] coordinates = calculareEndEffector(false);
-        if(coordinates[0] > coordinates[1]) {
-            return coordinates[0];
-        } else if (coordinates[1] > coordinates[0]) {
-            return coordinates[1];
+        try {
+
+            double[] coordinates = calculareEndEffector(false);
+            if (coordinates[0] > coordinates[1]) {
+                return coordinates[0];
+            } else {
+                return coordinates[1];
+            }
+
+
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
         }
-        throw new IllegalArgumentException("Invalid");
     }
 
     public static void main(String[] args) {
@@ -175,9 +182,9 @@ public class Arm {
         arm.setArm();
 
         // Define target position
-        double targetYaw = 20;    // X-axis
-        double targetPitch = 40;  // Y-axis
-        double targetRoll = 0;   // Z-axis
+        double targetYaw = 80;    // X-axis
+        double targetPitch = 0;  // Y-axis
+        double targetRoll = 10;   // Z-axis
 
 
         System.out.println("Initial End Effector Position:");
@@ -185,14 +192,18 @@ public class Arm {
         System.out.println("Initial Position: " + java.util.Arrays.toString(initialPosition));
 
         // Optimize angles for each joint
-
+//#TODO  fix distance calculation
+        //#TODO ensure correct position axis are set correctly
         do{
 
             for (int i = arm.arm.length - 1; i >= 0; i--) {
                 arm.findMinimalDistance(i, targetYaw, targetPitch, targetRoll);
+                double[] position = arm.calculareEndEffector(false);
                 System.out.println("Distance: " + arm.getDistance());
+                System.out.println("Position: Pitch " + position[0] + ", Roll " + position[1] + ", Yaw " + position[2]);
             }
             arm.findMinimalDistance(arm.getRadius(), targetYaw, targetPitch, targetRoll);
+
         } while (Math.abs(arm.getDistance()) > arm.getPRECISION());
         System.out.println("\nFinal End Effector Position:");
         double[] finalPosition = arm.calculareEndEffector(true);
