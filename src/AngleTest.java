@@ -42,10 +42,8 @@ public class AngleTest {
                     // Round the x, y values to 3 decimal places
                     double x = circleOffset.round(position[0], 3);
                     double y = circleOffset.round(position[1], 3);
-                    double z = circleOffset.getZ(); // Assuming z is retrieved via getZ()
-
                     // Write the data to the CSV file in the format: Angle, x, y, z
-                    writer.printf("%d,%.3f,%.3f,%.3f%n", angle, x, y, z);
+                 //   writer.printf("%d,%.3f,%.3f,%.3f%n", angle, x, y, z);
                 }
 
                 System.out.println("Test data saved to angle_test_data_case_" + i + ".csv");

@@ -1,9 +1,11 @@
+import java.util.Arrays;
+
 public class Arm {
     private Joint[] arm = new Joint[]{new Joint(), new Joint(), new Joint(), new Joint(), new Joint(), new Joint()};
     private double[] currentAngle = new double[arm.length];
     private double baseAngle;
-    private double distamce;
-    private final double PRECISION = 0.0001;  // Higher precision for finer control
+    private double distance;
+    private final double PRECISION = 0.001;  // Higher precision for finer control
 
     public double getPRECISION() {
         return PRECISION;
@@ -19,12 +21,12 @@ public class Arm {
         arm[5].setLimits(-100, 300);
 
         // Set lengths of each joint
-        arm[0].setLength(15);
-        arm[1].setLength(10);
-        arm[2].setLength(10);
-        arm[3].setLength(40);
-        arm[4].setLength(4);
-        arm[5].setLength(16);
+        arm[0].setLength(20);
+        arm[1].setLength(20);
+        arm[2].setLength(20);
+        arm[3].setLength(20);
+        arm[4].setLength(20);
+        arm[5].setLength(20);
 
         // Set initial relative angles
         arm[0].setRelativeAngle(3);
@@ -77,7 +79,7 @@ public class Arm {
                     optimalAngle = minimalDistance;
                 }
             }
-            this.distamce = distance1;
+            this.distance = distance1;
         }
 
         arm[index].setRelativeAngle(optimalAngle);
@@ -118,7 +120,7 @@ public class Arm {
                     optimalAngle = minimalDistance;
                 }
             }
-            this.distamce = distance1;
+            this.distance = distance1;
         }
 
         this.baseAngle = optimalAngle;
@@ -133,45 +135,51 @@ public class Arm {
         );
     }
 
+    public double getBaseAngle() {
+        return baseAngle;
+    }
+
     private double[] calculareEndEffector(boolean returnValue) {
         double currentAngle = 0;
-        double roll = 0;
-        double pitch = 0;
-        double yaw = 0;
+        double roll = 0;  // Forward/backward (X-axis)
+        double pitch = 0; // Side-to-side (Y-axis)
+        double yaw = 0;   // Height (Z-axis)
+        double radius = 0;
 
+        // First pass: Calculate in 2D (no yaw yet)
         for (int i = 0; i < arm.length; i++) {
             CircleOffset round = new CircleOffset(arm[i].getLength());
             arm[i].setRotation(currentAngle);
             currentAngle += arm[i].getRelativeAngle();  // Update current angle
             round.calculateDistance(currentAngle);  // Calculate position
-            roll += round.getX();
-            yaw += round.getY();
-            pitch += round.getZ();
-            //#TODO fix yaw and adjust identifier
+
+            yaw += round.getX();   // Update X (Roll) - Forward/backward
+            radius += round.getY();  // Update Y (Pitch) - Side-to-side
         }
-        // Add base rotation plate contribution
-        CircleOffset round = new CircleOffset(roll);
-        round.calculateDistance(baseAngle);
-        pitch += round.getY();
-        roll += round.getX();
-       // System.out.println("Yaw: " + yaw + ", Pitch: " + pitch + ", Roll: " + roll);
-        return new double[]{roll, pitch, yaw};  // Return calculated position
+
+        // Now calculate the yaw (height) from the base rotation plate contribution
+        // Using the radius from 2D to calculate the final 3D position
+        CircleOffset round = new CircleOffset(radius);
+        round.calculateDistance(baseAngle); // Update position considering base angle
+        // Using radius (from 2D calculation) to figure out pitch and roll
+        roll = round.getX();  // Forward/backward movement (Roll)
+        pitch = round.getY(); // Side-to-side movement (Pitch)
+
+        return new double[]{roll, pitch, yaw};  // Return calculated position with yaw preserved
     }
+
     private double getDistance() {
-        return this.distamce;
+        return this.distance;
     }
 
     private double getRadius() {
         try {
-
             double[] coordinates = calculareEndEffector(false);
             if (coordinates[0] > coordinates[1]) {
                 return coordinates[0];
             } else {
                 return coordinates[1];
             }
-
-
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
@@ -181,21 +189,17 @@ public class Arm {
         Arm arm = new Arm();
         arm.setArm();
 
-        // Define target position
-        double targetYaw = 80;    // X-axis
-        double targetPitch = 0;  // Y-axis
-        double targetRoll = 10;   // Z-axis
-
+        // Define target position (ensure these are in the correct axis order)
+        double targetYaw = 70;    // Height (Z-axis)
+        double targetPitch = 0;   // Side-to-side (Y-axis)
+        double targetRoll = 10;    // Forward/backward (X-axis)
 
         System.out.println("Initial End Effector Position:");
         double[] initialPosition = arm.calculareEndEffector(true);
-        System.out.println("Initial Position: " + java.util.Arrays.toString(initialPosition));
+        System.out.println("Initial Position: " + Arrays.toString(initialPosition));
 
         // Optimize angles for each joint
-//#TODO  fix distance calculation
-        //#TODO ensure correct position axis are set correctly
-        do{
-
+        do {
             for (int i = arm.arm.length - 1; i >= 0; i--) {
                 arm.findMinimalDistance(i, targetYaw, targetPitch, targetRoll);
                 double[] position = arm.calculareEndEffector(false);
@@ -207,6 +211,12 @@ public class Arm {
         } while (Math.abs(arm.getDistance()) > arm.getPRECISION());
         System.out.println("\nFinal End Effector Position:");
         double[] finalPosition = arm.calculareEndEffector(true);
-        System.out.println("Final Position: " + java.util.Arrays.toString(finalPosition));
+        System.out.println("Final Position: " + Arrays.toString(finalPosition));
+        System.out.println("Optimal Position Base: " + arm.getBaseAngle());
+        double[] optimalPosition = new double[arm.arm.length];
+        for (int i = 0; i < arm.arm.length; i++) {
+            optimalPosition[i] = arm.arm[i].getRelativeAngle();
+            System.out.println("Optimal Position Joint "+i +": " + optimalPosition[i]+" degrees");
+        }
     }
 }

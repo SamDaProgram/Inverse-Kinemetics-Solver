@@ -2,12 +2,10 @@ public class CircleOffset {
 
     private double x;
     private double y;
-    private double z;
     private double angle;
 
     public CircleOffset(double x) {
         this.x = x;
-        this.z = z;
         this.y = 0; // Initialize y to 0
         this.angle = 0; // Default angle
     }
@@ -20,9 +18,6 @@ public class CircleOffset {
         return round(y,4);
     }
 
-    public double getZ() {
-        return round(z,4);
-    }
 
     public double getAngle() {
         return (angle == 360) ? 0 : angle; // Ensure angle is displayed as 0 when it equals 360
