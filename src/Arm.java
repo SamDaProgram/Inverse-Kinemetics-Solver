@@ -1,6 +1,8 @@
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class Arm {
+    Scanner input = new Scanner(System.in);
     private Joint[] arm = new Joint[]{new Joint(), new Joint(), new Joint(), new Joint(), new Joint(), new Joint()};
     private double[] currentAngle = new double[arm.length];
     private double baseAngle;
@@ -83,7 +85,7 @@ public class Arm {
         }
 
         arm[index].setRelativeAngle(optimalAngle);
-        System.out.println("Optimal Angle: " + optimalAngle + ", Minimal Distance: " + minimalDistance);
+      //  System.out.println("Optimal Angle: " + optimalAngle + ", Minimal Distance: " + minimalDistance);
     }
 
     private void findMinimalDistance(double length, double targetYaw, double targetPitch, double targetRoll) {
@@ -124,7 +126,7 @@ public class Arm {
         }
 
         this.baseAngle = optimalAngle;
-        System.out.println("Rotating Base Optimal Angle: " + optimalAngle + ", Minimal Distance: " + minimalDistance);
+    //    System.out.println("Rotating Base Optimal Angle: " + optimalAngle + ", Minimal Distance: " + minimalDistance);
     }
 
     private double calculateEuclideanDistance(double roll1, double pitch1, double yaw1, double roll2, double pitch2, double yaw2) {
@@ -184,27 +186,38 @@ public class Arm {
             throw new RuntimeException(e);
         }
     }
-
+//
     public static void main(String[] args) {
         Arm arm = new Arm();
+
+        double targetYaw = 0;    // Height (Z-axis)
+        double targetPitch = 0;   // Side-to-side (Y-axis)
+        double targetRoll = 0;    // Forward/backward (X-axis)
+        System.out.print("Enter Target Pitch: ");
+        targetPitch = arm.input.nextDouble();
+        System.out.print("Enter Target Yaw: ");
+        targetYaw = arm.input.nextDouble();
+        System.out.print("Enter Target Roll: ");
+        targetRoll = arm.input.nextDouble();
+
         arm.setArm();
 
         // Define target position (ensure these are in the correct axis order)
-        double targetYaw = 70;    // Height (Z-axis)
-        double targetPitch = 0;   // Side-to-side (Y-axis)
-        double targetRoll = 10;    // Forward/backward (X-axis)
+
+
 
         System.out.println("Initial End Effector Position:");
         double[] initialPosition = arm.calculareEndEffector(true);
         System.out.println("Initial Position: " + Arrays.toString(initialPosition));
 
+        System.out.println("Please wait... Computing Position...");
         // Optimize angles for each joint
         do {
             for (int i = arm.arm.length - 1; i >= 0; i--) {
                 arm.findMinimalDistance(i, targetYaw, targetPitch, targetRoll);
                 double[] position = arm.calculareEndEffector(false);
-                System.out.println("Distance: " + arm.getDistance());
-                System.out.println("Position: Pitch " + position[0] + ", Roll " + position[1] + ", Yaw " + position[2]);
+            //    System.out.println("Distance: " + arm.getDistance());
+             //   System.out.println("Position: Pitch " + position[0] + ", Roll " + position[1] + ", Yaw " + position[2]);
             }
             arm.findMinimalDistance(arm.getRadius(), targetYaw, targetPitch, targetRoll);
 
@@ -216,7 +229,7 @@ public class Arm {
         double[] optimalPosition = new double[arm.arm.length];
         for (int i = 0; i < arm.arm.length; i++) {
             optimalPosition[i] = arm.arm[i].getRelativeAngle();
-            System.out.println("Optimal Position Joint "+i +": " + optimalPosition[i]+" degrees");
+            System.out.println("Optimal Position Joint "+i +1+": " + optimalPosition[i]+" degrees");
         }
     }
 }

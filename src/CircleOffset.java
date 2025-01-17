@@ -59,8 +59,4 @@ public class CircleOffset {
         return Math.round(value * factor) / factor;
     }
 
-
-
-
-
 }
